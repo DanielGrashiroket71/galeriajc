@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>PRISMA Gallery</title>
+<link rel="manifest" href="manifest.json">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+:root {
+  --bg:#0a0a0f; --surface:#131318; --surface2:#1c1c24; --surface3:#252530;
+  --border:rgba(255,255,255,0.07); --accent:#7c5cfc; --accent2:#fc5c7d;
+  --accent3:#5cf0fc; --text:#f0f0ff; --text2:#8888aa; --text3:#555570;
+  --vault:#fc5c7d; --green:#5cfc9a; --yellow:#fcdb5c;
+  --nav-h:72px; --header-h:60px; --radius:16px; --radius-sm:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;}
+#app{width:100%;height:100%;display:flex;flex-direction:column;position:relative;overflow:hidden;}
+
+/* HEADER */
+.top-header{height:var(--header-h);background:rgba(10,10,15,0.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;border-bottom:1px solid var(--border);position:relative;z-index:50;}
+.header-logo{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.header-actions{display:flex;gap:8px;}
+.icon-btn{width:38px;height:38px;border-radius:50%;border:none;background:var(--surface2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all 0.2s;}
+.icon-btn:active{transform:scale(0.9);background:var(--surface3);}
+.icon-btn.active{background:var(--accent);color:#fff;}
+
+/* SCREENS */
+.screen{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(var(--nav-h)+8px);display:none;}
+.screen.active{display:block;}
+
+/* NAV */
+.bottom-nav{height:var(--nav-h);background:rgba(13,13,20,0.98);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;flex-shrink:0;position:relative;z-index:50;padding-bottom:env(safe-area-inset-bottom);}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:8px 0;border:none;background:none;color:var(--text3);transition:all 0.2s;position:relative;}
+.nav-item.active{color:var(--accent);}
+.nav-item .nav-icon{font-size:22px;}
+.nav-item .nav-label{font-size:10px;font-weight:500;}
+.nav-item::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:0;height:2px;background:var(--accent);border-radius:0 0 4px 4px;transition:width 0.3s;}
+.nav-item.active::before{width:36px;}
+
+/* SECTION */
+.section-header{padding:20px 16px 12px;display:flex;align-items:center;justify-content:space-between;}
+.section-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;}
+.section-sub{font-size:13px;color:var(--text3);margin-top:2px;}
+.btn-add{padding:8px 14px;border-radius:20px;border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;}
+.btn-add:active{transform:scale(0.95);opacity:0.9;}
+
+/* PHOTO GRID */
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:0 0 8px;}
+.photo-item{aspect-ratio:1;overflow:hidden;cursor:pointer;position:relative;background:var(--surface2);}
+.photo-item img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.2s;}
+.photo-item:active img{transform:scale(0.97);}
+.photo-item .photo-overlay{position:absolute;inset:0;background:rgba(0,0,0,0);transition:background 0.2s;}
+.photo-item.selected .photo-overlay{background:rgba(124,92,252,0.4);}
+.photo-item .check-circle{width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,0.7);background:transparent;display:none;position:absolute;top:6px;right:6px;align-items:center;justify-content:center;font-size:12px;transition:all 0.2s;}
+.select-mode .photo-item .check-circle{display:flex;}
+.photo-item.selected .check-circle{background:var(--accent);border-color:var(--accent);color:#fff;}
+.photo-badge{position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,0.6);border-radius:4px;padding:2px 5px;font-size:10px;color:#fff;backdrop-filter:blur(4px);}
+
+/* DATE GROUP */
+.date-group-label{padding:12px 16px 6px;font-size:12px;font-weight:600;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase;}
+
+/* ALBUMS */
+.albums-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:0 16px 8px;}
+.album-card{border-radius:var(--radius);overflow:hidden;cursor:pointer;background:var(--surface2);position:relative;transition:transform 0.2s;border:1px solid var(--border);}
+.album-card:active{transform:scale(0.97);}
+.album-thumb{aspect-ratio:4/3;background:var(--surface3);overflow:hidden;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:1px;}
+.album-thumb img{width:100%;height:100%;object-fit:cover;}
+.thumb-placeholder{background:linear-gradient(135deg,var(--surface3),var(--surface2));display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--text3);}
+.album-info{padding:10px 12px;}
+.album-name{font-family:'Syne',sans-serif;font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.album-count{font-size:12px;color:var(--text3);margin-top:2px;}
+.album-actions{position:absolute;top:8px;right:8px;display:flex;gap:4px;}
+.album-action-btn{width:28px;height:28px;border-radius:50%;border:none;background:rgba(0,0,0,0.6);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;backdrop-filter:blur(4px);}
+.album-pin-badge{position:absolute;top:8px;left:8px;background:rgba(252,92,125,0.9);border-radius:12px;padding:3px 8px;font-size:10px;font-weight:600;color:#fff;}
+
+/* FULLSCREEN VIEWER */
+#viewer{position:fixed;inset:0;background:#000;z-index:200;display:none;flex-direction:column;}
+#viewer.open{display:flex;}
+.viewer-header{position:absolute;top:0;left:0;right:0;z-index:10;background:linear-gradient(to bottom,rgba(0,0,0,0.8),transparent);padding:16px;display:flex;align-items:center;justify-content:space-between;padding-top:calc(16px + env(safe-area-inset-top));}
+.viewer-img-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
+.viewer-img-wrap img{max-width:100%;max-height:100%;object-fit:contain;user-select:none;transition:transform 0.3s;}
+.viewer-footer{position:absolute;bottom:0;left:0;right:0;z-index:10;background:linear-gradient(to top,rgba(0,0,0,0.85),transparent);padding:20px 16px;display:flex;align-items:center;justify-content:space-around;padding-bottom:calc(20px + env(safe-area-inset-bottom));}
+.viewer-btn{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:rgba(255,255,255,0.9);cursor:pointer;font-size:10px;font-weight:500;}
+.viewer-btn .vb-icon{font-size:22px;}
+.viewer-counter{font-size:14px;color:rgba(255,255,255,0.7);font-family:'Syne',sans-serif;font-weight:600;}
+.viewer-prev,.viewer-next{position:absolute;top:50%;transform:translateY(-50%);z-index:5;background:rgba(0,0,0,0.4);border:none;color:#fff;font-size:28px;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.viewer-prev{left:8px;}
+.viewer-next{right:8px;}
+
+/* VAULT */
+.vault-locked{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - var(--header-h) - var(--nav-h));padding:40px 24px;text-align:center;gap:20px;}
+.vault-icon-big{font-size:64px;margin-bottom:8px;}
+.vault-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;background:linear-gradient(135deg,var(--vault),#ff8fa3);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.vault-subtitle{font-size:14px;color:var(--text2);max-width:260px;line-height:1.6;}
+.pin-display{display:flex;gap:16px;margin:8px 0;}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(252,92,125,0.6);background:transparent;transition:all 0.2s;}
+.pin-dot.filled{background:var(--vault);border-color:var(--vault);transform:scale(1.2);}
+.pin-dot.error{background:#ff3355;border-color:#ff3355;animation:shake 0.4s;}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;max-width:280px;}
+.pin-key{aspect-ratio:1;border-radius:50%;border:1px solid var(--border);cursor:pointer;background:var(--surface2);color:var(--text);font-size:24px;font-weight:500;font-family:'Syne',sans-serif;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.pin-key:active{transform:scale(0.93);background:var(--surface3);}
+.pin-key.biometric{font-size:22px;background:rgba(252,92,125,0.1);border-color:rgba(252,92,125,0.3);}
+.pin-error-msg{font-size:13px;color:#ff3355;height:18px;}
+
+/* VAULT CONTENT */
+.vault-header-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(252,92,125,0.06);border-bottom:1px solid rgba(252,92,125,0.15);}
+.vault-indicator{display:flex;align-items:center;gap:8px;}
+.vault-dot{width:8px;height:8px;border-radius:50%;background:var(--vault);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.vault-label{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--vault);}
+
+/* VAULT FOLDERS */
+.vault-folders-bar{padding:10px 16px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--border);}
+.vault-folders-bar::-webkit-scrollbar{display:none;}
+.vault-folder-chip{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:13px;white-space:nowrap;cursor:pointer;flex-shrink:0;transition:all 0.2s;}
+.vault-folder-chip.active{background:rgba(252,92,125,0.2);border-color:var(--vault);color:var(--vault);}
+.vault-folder-chip:active{transform:scale(0.96);}
+.vault-folder-add{padding:6px 12px;border-radius:20px;border:1px dashed rgba(252,92,125,0.4);background:transparent;color:rgba(252,92,125,0.7);font-size:13px;cursor:pointer;flex-shrink:0;}
+
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal-sheet{width:100%;max-width:480px;background:var(--surface);border-radius:20px 20px 0 0;padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom));animation:slideUp 0.3s cubic-bezier(0.32,0.72,0,1);border:1px solid var(--border);border-bottom:none;}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:40px;height:4px;background:var(--surface3);border-radius:2px;margin:0 auto 20px;}
+.modal-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:16px;}
+.input-field{width:100%;padding:14px 16px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:16px;margin-bottom:12px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;}
+.input-field:focus{border-color:var(--accent);}
+.input-field::placeholder{color:var(--text3);}
+.btn-primary{width:100%;padding:15px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:16px;font-weight:600;cursor:pointer;font-family:'Syne',sans-serif;transition:all 0.2s;margin-bottom:8px;}
+.btn-primary:active{transform:scale(0.98);opacity:0.9;}
+.btn-secondary{width:100%;padding:14px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;}
+.btn-secondary:active{background:var(--surface2);}
+.btn-danger{width:100%;padding:14px;border-radius:12px;border:1px solid rgba(255,51,85,0.3);background:rgba(255,51,85,0.1);color:#ff3355;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;margin-top:8px;}
+
+/* SELECTION TOOLBAR */
+.select-toolbar{position:fixed;bottom:var(--nav-h);left:0;right:0;z-index:100;background:rgba(13,13,20,0.98);border-top:1px solid var(--border);backdrop-filter:blur(20px);padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom));display:none;align-items:center;justify-content:space-around;transform:translateY(100%);transition:transform 0.3s;}
+.select-toolbar.open{display:flex;transform:translateY(0);}
+.sel-btn{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:var(--text2);cursor:pointer;font-size:11px;font-weight:500;}
+.sel-btn .sel-icon{font-size:22px;}
+.sel-btn.red{color:#ff5555;}
+.sel-btn.purple{color:var(--accent);}
+.sel-btn.pink{color:var(--vault);}
+
+/* EMPTY STATE */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:280px;gap:12px;color:var(--text3);padding:40px 20px;text-align:center;}
+.empty-icon{font-size:52px;opacity:0.5;}
+.empty-title{font-family:'Syne',sans-serif;font-size:18px;color:var(--text2);}
+.empty-sub{font-size:13px;line-height:1.6;}
+
+/* SEARCH */
+.search-bar{margin:12px 16px;position:relative;}
+.search-input{width:100%;padding:12px 16px 12px 44px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;}
+.search-input:focus{border-color:var(--accent);}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--text3);}
+
+/* FILTER CHIPS */
+.filter-chips{display:flex;gap:8px;padding:0 16px 12px;overflow-x:auto;scrollbar-width:none;}
+.filter-chips::-webkit-scrollbar{display:none;}
+.chip{padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:13px;white-space:nowrap;cursor:pointer;transition:all 0.2s;flex-shrink:0;}
+.chip.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.chip:active{transform:scale(0.96);}
+
+/* SETTINGS */
+.settings-list{padding:0 16px;}
+.settings-item{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--border);cursor:pointer;}
+.settings-item:last-child{border-bottom:none;}
+.settings-item-left{display:flex;align-items:center;gap:14px;}
+.settings-icon{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.settings-name{font-size:15px;font-weight:500;}
+.settings-desc{font-size:12px;color:var(--text3);margin-top:2px;}
+.settings-chevron{font-size:20px;color:var(--text3);}
+.toggle-switch{width:48px;height:28px;border-radius:14px;background:var(--surface3);border:none;cursor:pointer;position:relative;transition:background 0.3s;flex-shrink:0;}
+.toggle-switch.on{background:var(--accent);}
+.toggle-thumb{width:22px;height:22px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:left 0.3s;box-shadow:0 1px 4px rgba(0,0,0,0.3);}
+.toggle-switch.on .toggle-thumb{left:23px;}
+
+/* STATS CARDS */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px 16px;}
+.stat-card{background:var(--surface2);border-radius:var(--radius-sm);padding:12px;border:1px solid var(--border);text-align:center;}
+.stat-num{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--text);}
+.stat-lbl{font-size:11px;color:var(--text3);margin-top:2px;}
+
+/* STORAGE ANALYZER */
+.storage-card{margin:0 16px 16px;background:var(--surface2);border-radius:var(--radius);padding:16px;border:1px solid var(--border);}
+.storage-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.storage-bar-wrap{background:var(--surface3);border-radius:8px;height:10px;overflow:hidden;margin-bottom:8px;}
+.storage-bar-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 1s ease;}
+.storage-info{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);}
+.storage-legend{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.storage-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+.storage-detail-item{background:var(--surface3);border-radius:10px;padding:10px;display:flex;align-items:center;gap:8px;}
+.storage-detail-icon{font-size:20px;}
+.storage-detail-name{font-size:12px;color:var(--text2);}
+.storage-detail-size{font-size:13px;font-weight:600;color:var(--text);}
+
+/* INFO ROW */
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+.info-row:last-child{border-bottom:none;}
+.info-label{font-size:13px;color:var(--text3);}
+.info-value{font-size:13px;color:var(--text);font-weight:500;text-align:right;max-width:60%;}
+
+/* CONTEXT MENU */
+.ctx-menu{position:fixed;background:var(--surface2);border-radius:14px;border:1px solid var(--border);min-width:180px;z-index:400;box-shadow:0 8px 32px rgba(0,0,0,0.5);overflow:hidden;}
+.ctx-item{padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;font-size:15px;transition:background 0.15s;}
+.ctx-item:active{background:var(--surface3);}
+.ctx-item.danger{color:#ff5555;}
+.ctx-icon{font-size:18px;width:24px;text-align:center;}
+
+/* TOAST */
+#toast{position:fixed;bottom:calc(var(--nav-h)+20px);left:50%;transform:translateX(-50%) translateY(20px);background:rgba(30,30,40,0.95);color:var(--text);padding:12px 20px;border-radius:24px;font-size:14px;font-weight:500;z-index:500;opacity:0;pointer-events:none;transition:all 0.3s;border:1px solid var(--border);white-space:nowrap;backdrop-filter:blur(12px);}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* FOLDER LIST */
+.folder-list{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;}
+.folder-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;border:1px solid var(--border);cursor:pointer;transition:all 0.2s;}
+.folder-item:active{background:var(--surface2);}
+.folder-item.selected{border-color:var(--accent);background:rgba(124,92,252,0.1);}
+.folder-emoji{font-size:24px;}
+.folder-name{flex:1;font-size:15px;}
+.folder-count{font-size:12px;color:var(--text3);}
+
+/* ALBUM DETAIL BREADCRUMB */
+.breadcrumb{padding:10px 16px;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text3);}
+.breadcrumb-sep{color:var(--text3);}
+
+/* PROGRESS RING */
+.progress-ring-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center;}
+.progress-ring{transform:rotate(-90deg);}
+
+/* SWIPE HINT */
+.swipe-hint{text-align:center;padding:8px;font-size:11px;color:var(--text3);opacity:0.6;}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- HEADER -->
+  <div class="top-header">
+    <div class="header-logo">PRISMA</div>
+    <div class="header-actions">
+      <button class="icon-btn" id="searchToggleBtn" onclick="toggleSearch()">🔍</button>
+      <button class="icon-btn" id="selectToggleBtn" onclick="toggleSelectMode()">☑️</button>
+      <button class="icon-btn" id="addPhotoBtn" onclick="document.getElementById('fileInput').click()">＋</button>
+    </div>
+  </div>
+
+  <!-- ══ GALLERY SCREEN ══ -->
+  <div class="screen active" id="screen-gallery">
+    <div id="searchBar" style="display:none">
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" id="searchInput" placeholder="Buscar fotos..." oninput="filterPhotos()" autocomplete="off">
+      </div>
+    </div>
+    <div class="filter-chips">
+      <div class="chip active" onclick="setFilter('all',this)">Todas</div>
+      <div class="chip" onclick="setFilter('favoritos',this)">❤️ Favoritos</div>
+      <div class="chip" onclick="setFilter('fotos',this)">📷 Fotos</div>
+      <div class="chip" onclick="setFilter('videos',this)">🎬 Videos</div>
+      <div class="chip" onclick="setFilter('recientes',this)">🕐 Recientes</div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="statTotal">0</div><div class="stat-lbl">Fotos</div></div>
+      <div class="stat-card"><div class="stat-num" id="statAlbums">0</div><div class="stat-lbl">Álbumes</div></div>
+      <div class="stat-card"><div class="stat-num" id="statVault">0</div><div class="stat-lbl">🔐 Bóveda</div></div>
+    </div>
+    <div id="photoGrid" class="photo-grid"></div>
+    <div class="empty-state" id="emptyGallery" style="display:none">
+      <div class="empty-icon">📷</div>
+      <div class="empty-title">Galería vacía</div>
+      <div class="empty-sub">Toca el botón + para agregar fotos y videos</div>
+    </div>
+    <div class="swipe-hint">Mantén presionado para opciones · Desliza en visor</div>
+  </div>
+
+  <!-- ══ ALBUMS SCREEN ══ -->
+  <div class="screen" id="screen-albums">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Álbumes</div>
+        <div class="section-sub" id="albumSubtitle">0 álbumes</div>
+      </div>
+      <button class="btn-add" onclick="openCreateAlbumModal()">＋ Nuevo</button>
+    </div>
+    <div class="albums-grid" id="albumsGrid"></div>
+    <div class="empty-state" id="emptyAlbums" style="display:none">
+      <div class="empty-icon">📂</div>
+      <div class="empty-title">Sin álbumes</div>
+      <div class="empty-sub">Crea tu primer álbum para organizar tus fotos</div>
+    </div>
+  </div>
+
+  <!-- ══ VAULT SCREEN ══ -->
+  <div class="screen" id="screen-vault">
+    <!-- LOCKED -->
+    <div class="vault-locked" id="vaultLocked">
+      <div class="vault-icon-big">🔐</div>
+      <div class="vault-title">Bóveda Segura</div>
+      <div class="vault-subtitle">Ingresa tu PIN para acceder a tus fotos privadas</div>
+      <div class="pin-display">
+        <div class="pin-dot" id="dot0"></div>
+        <div class="pin-dot" id="dot1"></div>
+        <div class="pin-dot" id="dot2"></div>
+        <div class="pin-dot" id="dot3"></div>
+      </div>
+      <div class="pin-error-msg" id="pinError"></div>
+      <div class="pin-pad">
+        <button class="pin-key" onclick="pinInput('1')">1</button>
+        <button class="pin-key" onclick="pinInput('2')">2</button>
+        <button class="pin-key" onclick="pinInput('3')">3</button>
+        <button class="pin-key" onclick="pinInput('4')">4</button>
+        <button class="pin-key" onclick="pinInput('5')">5</button>
+        <button class="pin-key" onclick="pinInput('6')">6</button>
+        <button class="pin-key" onclick="pinInput('7')">7</button>
+        <button class="pin-key" onclick="pinInput('8')">8</button>
+        <button class="pin-key" onclick="pinInput('9')">9</button>
+        <button class="pin-key biometric" onclick="tryBiometric()">⬚</button>
+        <button class="pin-key" onclick="pinInput('0')">0</button>
+        <button class="pin-key delete" onclick="pinDelete()">⌫</button>
+      </div>
+    </div>
+    <!-- UNLOCKED -->
+    <div id="vaultContent" style="display:none">
+      <div class="vault-header-bar">
+        <div class="vault-indicator">
+          <div class="vault-dot"></div>
+          <span class="vault-label">🔐 Bóveda Abierta</span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="icon-btn" style="background:rgba(252,92,125,0.1);color:var(--vault)" onclick="document.getElementById('vaultFileInput').click()">＋</button>
+          <button class="icon-btn" style="background:rgba(252,92,125,0.1);color:var(--vault)" onclick="lockVault()">🔒</button>
+        </div>
+      </div>
+      <!-- VAULT FOLDERS BAR -->
+      <div class="vault-folders-bar" id="vaultFoldersBar">
+        <div class="vault-folder-chip active" id="vaultFolderAll" onclick="selectVaultFolder('__all__',this)">📋 Todas</div>
+        <button class="vault-folder-add" onclick="openCreateVaultFolderModal()">＋ Carpeta</button>
+      </div>
+      <div id="vaultGrid" class="photo-grid" style="padding:4px 0"></div>
+      <div class="empty-state" id="emptyVault" style="display:none">
+        <div class="empty-icon">🔐</div>
+        <div class="empty-title">Bóveda vacía</div>
+        <div class="empty-sub">Agrega fotos secretas o muévelas desde la galería</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SETTINGS SCREEN ══ -->
+  <div class="screen" id="screen-settings">
+    <div class="section-header">
+      <div class="section-title">Ajustes</div>
+    </div>
+
+    <!-- STORAGE ANALYZER -->
+    <div class="storage-card" id="storageCard">
+      <div class="storage-title">📊 Almacenamiento del dispositivo</div>
+      <div class="storage-bar-wrap">
+        <div class="storage-bar-fill" id="storageBarFill" style="width:0%"></div>
+      </div>
+      <div class="storage-info">
+        <span id="storageUsed">Calculando...</span>
+        <span id="storageTotal">—</span>
+      </div>
+      <div class="storage-legend" id="storageLegend"></div>
+      <div class="storage-detail-grid" id="storageDetailGrid"></div>
+      <button class="btn-secondary" style="margin-top:12px;font-size:13px;padding:10px" onclick="analyzeStorage()">🔄 Actualizar análisis</button>
+    </div>
+
+    <div style="padding:0 16px 8px;font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Apariencia</div>
+    <div class="settings-list">
+      <div class="settings-item" onclick="openGridSettings()">
+        <div class="settings-item-left">
+          <div class="settings-icon" style="background:rgba(124,92,252,0.15)">⊞</div>
+          <div><div class="settings-name">Tamaño de grilla</div><div class="settings-desc" id="gridSizeDesc">3 columnas</div></div>
+        </div>
+        <span class="settings-chevron">›</span>
+      </div>
+      <div class="settings-item">
+        <div class="settings-item-left">
+          <div class="settings-icon" style="background:rgba(92,240,252,0.15)">🌙</div>
+          <div><div class="settings-name">Tema oscuro</div><div class="settings-desc">Siempre activo</div></div>
+        </div>
+        <button class="toggle-switch on" id="darkToggle"><div class="toggle-thumb"></div></button>
+      </div>
+    </div>
+
+    <div style="padding:16px 16px 8px;font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Seguridad</div>
+    <div class="settings-list">
+      <div class="settings-item" onclick="openChangePinModal()">
+        <div class="settings-item-left">
+          <div class="settings-icon" style="background:rgba(252,92,125,0.15)">🔑</div>
+          <div><div class="settings-name">PIN de Bóveda</div><div class="settings-desc">Cambia tu contraseña secreta</div></div>
+        </div>
+        <span class="settings-chevron">›</span>
+      </div>
+      <div class="settings-item" onclick="toggleFingerprintSetting()">
+        <div class="settings-item-left">
+          <div class="settings-icon" style="background:rgba(92,252,154,0.15)">👆</div>
+          <div><div class="settings-name">Huella / Face ID</div><div class="settings-desc" id="biometricDesc">Activar autenticación biométrica</div></div>
+        </div>
+        <button class="toggle-switch" id="biometricToggle"><div class="toggle-thumb"></div></button>
+      </div>
+    </div>
+
+    <div style="padding:16px 16px 8px;font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Datos</div>
+    <div class="settings-list">
+      <div class="settings-item" onclick="exportData()">
+        <div class="settings-item-left">
+          <div class="settings-icon" style="background:rgba(92,252,154,0.15)">💾</div>
+          <div><div class="settings-name">Exportar datos</div><div class="settings-desc">Guarda configuración y álbumes</div></div>
+        </div>
+        <span class="settings-chevron">›</span>
+      </div>
+      <div class="settings-item" onclick="importData()">
+        <div class="settings-item-left">
+          <div class="settings-icon" style="background:rgba(92,240,252,0.15)">📥</div>
+          <div><div class="settings-name">Importar datos</div><div class="settings-desc">Restaurar desde copia de seguridad</div></div>
+        </div>
+        <span class="settings-chevron">›</span>
+      </div>
+      <div class="settings-item" onclick="clearAllData()">
+        <div class="settings-item-left">
+          <div class="settings-icon" style="background:rgba(255,51,85,0.15)">🗑️</div>
+          <div><div class="settings-name">Limpiar todo</div><div class="settings-desc">Elimina todas las fotos y álbumes</div></div>
+        </div>
+        <span class="settings-chevron">›</span>
+      </div>
+    </div>
+
+    <div style="padding:24px 16px 0;text-align:center">
+      <div style="font-family:'Syne',sans-serif;font-size:13px;color:var(--text3)">PRISMA Gallery v2.0</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Tu galería, tu privacidad 🔒</div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <button class="nav-item active" id="nav-gallery" onclick="switchTab('gallery')">
+      <span class="nav-icon">🖼️</span>
+      <span class="nav-label">Galería</span>
+    </button>
+    <button class="nav-item" id="nav-albums" onclick="switchTab('albums')">
+      <span class="nav-icon">📂</span>
+      <span class="nav-label">Álbumes</span>
+    </button>
+    <button class="nav-item" id="nav-vault" onclick="switchTab('vault')">
+      <span class="nav-icon">🔐</span>
+      <span class="nav-label">Bóveda</span>
+    </button>
+    <button class="nav-item" id="nav-settings" onclick="switchTab('settings')">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">Ajustes</span>
+    </button>
+  </div>
+</div>
+
+<!-- FULLSCREEN VIEWER -->
+<div id="viewer">
+  <div class="viewer-header">
+    <button class="icon-btn" onclick="closeViewer()" style="background:rgba(0,0,0,0.5)">✕</button>
+    <span class="viewer-counter" id="viewerCounter">1 / 1</span>
+    <button class="icon-btn" id="favBtn" onclick="toggleFavorite()" style="background:rgba(0,0,0,0.5)">🤍</button>
+  </div>
+  <div class="viewer-img-wrap" id="viewerWrap">
+    <button class="viewer-prev" onclick="viewerPrev()">‹</button>
+    <img id="viewerImg" src="" alt="">
+    <button class="viewer-next" onclick="viewerNext()">›</button>
+  </div>
+  <div class="viewer-footer">
+    <button class="viewer-btn" onclick="downloadPhoto()"><span class="vb-icon">⬇️</span>Guardar</button>
+    <button class="viewer-btn" onclick="sharePhoto()"><span class="vb-icon">↗️</span>Compartir</button>
+    <button class="viewer-btn" onclick="moveToVaultFromViewer()"><span class="vb-icon">🔐</span>Bóveda</button>
+    <button class="viewer-btn" onclick="showPhotoInfo()"><span class="vb-icon">ℹ️</span>Info</button>
+    <button class="viewer-btn" onclick="deleteFromViewer()" style="color:#ff5555"><span class="vb-icon">🗑️</span>Eliminar</button>
+  </div>
+</div>
+
+<!-- SELECTION TOOLBAR -->
+<div class="select-toolbar" id="selectToolbar">
+  <button class="sel-btn purple" onclick="selectAll()"><span class="sel-icon">☑️</span>Todo</button>
+  <button class="sel-btn" onclick="moveSelectedToAlbum()"><span class="sel-icon">📂</span>Álbum</button>
+  <button class="sel-btn pink" onclick="moveSelectedToVault()"><span class="sel-icon">🔐</span>Bóveda</button>
+  <button class="sel-btn" onclick="downloadSelected()"><span class="sel-icon">⬇️</span>Guardar</button>
+  <button class="sel-btn red" onclick="deleteSelected()"><span class="sel-icon">🗑️</span>Eliminar</button>
+</div>
+
+<!-- FILE INPUTS -->
+<input type="file" id="fileInput" accept="image/*,video/*" multiple style="display:none" onchange="addPhotos(this.files)">
+<input type="file" id="vaultFileInput" accept="image/*,video/*" multiple style="display:none" onchange="addVaultPhotos(this.files)">
+<input type="file" id="importInput" accept="application/json" style="display:none" onchange="doImport(this.files)">
+
+<!-- ══ MODALS ══ -->
+
+<!-- Create Album -->
+<div class="modal-overlay" id="createAlbumModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📂 Nuevo Álbum</div>
+    <input class="input-field" id="albumNameInput" placeholder="Nombre del álbum" maxlength="40">
+    <div style="font-size:13px;color:var(--text2);margin-bottom:8px">Ícono:</div>
+    <div id="albumEmojiRow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px"></div>
+    <button class="btn-primary" onclick="createAlbum()">Crear Álbum</button>
+    <button class="btn-secondary" onclick="closeModal('createAlbumModal')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Move to Album -->
+<div class="modal-overlay" id="moveAlbumModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Mover a Álbum</div>
+    <div class="folder-list" id="folderPickerList"></div>
+    <button class="btn-primary" onclick="confirmMoveToAlbum()" style="margin-top:16px">Mover</button>
+    <button class="btn-secondary" onclick="closeModal('moveAlbumModal')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Album Detail -->
+<div class="modal-overlay" id="albumDetailModal">
+  <div class="modal-sheet" style="border-radius:20px 20px 0 0;max-height:90vh;overflow-y:auto;padding-bottom:32px">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="modal-title" id="albumDetailTitle" style="margin-bottom:0">Álbum</div>
+      <div style="display:flex;gap:8px">
+        <button class="icon-btn" onclick="addToAlbumFromDetail()" title="Agregar fotos">＋</button>
+        <button class="icon-btn" onclick="closeModal('albumDetailModal')">✕</button>
+      </div>
+    </div>
+    <div class="photo-grid" id="albumDetailGrid" style="margin:0 -20px"></div>
+    <div class="empty-state" id="emptyAlbumDetail" style="display:none">
+      <div class="empty-icon">🖼️</div>
+      <div class="empty-title">Álbum vacío</div>
+      <div class="empty-sub">Agrega fotos desde la galería</div>
+    </div>
+    <button class="btn-danger" onclick="deleteCurrentAlbum()">🗑️ Eliminar álbum</button>
+  </div>
+</div>
+
+<!-- Photo Info -->
+<div class="modal-overlay" id="photoInfoModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">ℹ️ Información</div>
+    <div id="photoInfoContent"></div>
+    <button class="btn-secondary" onclick="closeModal('photoInfoModal')" style="margin-top:16px">Cerrar</button>
+  </div>
+</div>
+
+<!-- Change PIN -->
+<div class="modal-overlay" id="changePinModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🔑 Cambiar PIN</div>
+    <input class="input-field" id="oldPinInput" type="password" placeholder="PIN actual (0000 por defecto)" maxlength="4" inputmode="numeric">
+    <input class="input-field" id="newPinInput" type="password" placeholder="Nuevo PIN (4-6 dígitos)" maxlength="6" inputmode="numeric">
+    <input class="input-field" id="confirmPinInput" type="password" placeholder="Confirmar nuevo PIN" maxlength="6" inputmode="numeric">
+    <button class="btn-primary" onclick="changePin()">Cambiar PIN</button>
+    <button class="btn-secondary" onclick="closeModal('changePinModal')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Grid Settings -->
+<div class="modal-overlay" id="gridModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⊞ Tamaño de Grilla</div>
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <button class="btn-secondary" onclick="setGridCols(2)" style="flex:1">2 col</button>
+      <button class="btn-secondary" onclick="setGridCols(3)" style="flex:1">3 col</button>
+      <button class="btn-secondary" onclick="setGridCols(4)" style="flex:1">4 col</button>
+      <button class="btn-secondary" onclick="setGridCols(5)" style="flex:1">5 col</button>
+    </div>
+    <button class="btn-secondary" onclick="closeModal('gridModal')">Cerrar</button>
+  </div>
+</div>
+
+<!-- Create Vault Folder -->
+<div class="modal-overlay" id="createVaultFolderModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📁 Nueva Carpeta en Bóveda</div>
+    <input class="input-field" id="vaultFolderNameInput" placeholder="Nombre de la carpeta" maxlength="30">
+    <div style="font-size:13px;color:var(--text2);margin-bottom:8px">Ícono:</div>
+    <div id="vaultFolderEmojiRow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px"></div>
+    <button class="btn-primary" onclick="createVaultFolder()">Crear Carpeta</button>
+    <button class="btn-secondary" onclick="closeModal('createVaultFolderModal')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Move to Vault Folder -->
+<div class="modal-overlay" id="moveVaultFolderModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📁 Mover a Carpeta</div>
+    <div class="folder-list" id="vaultFolderPickerList"></div>
+    <button class="btn-primary" onclick="confirmMoveToVaultFolder()" style="margin-top:16px">Mover</button>
+    <button class="btn-secondary" onclick="closeModal('moveVaultFolderModal')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+<!-- Context Menu -->
+<div id="ctxMenu" class="ctx-menu" style="display:none"></div>
+
+<script>
+// ════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════
+let state = {
+  photos: [],
+  albums: [],
+  vaultPhotos: [],
+  vaultFolders: [],   // {id, name, emoji}
+  pin: '0000',
+  vaultUnlocked: false,
+  gridCols: 3,
+  currentFilter: 'all',
+  biometricEnabled: false,
+};
+
+let viewerPhotos = [];
+let viewerIndex = 0;
+let selectMode = false;
+let selectedIds = new Set();
+let currentAlbumId = null;
+let selectedAlbumId = null;
+let currentAlbumEmoji = '📷';
+let currentVaultFolder = '__all__';
+let selectedVaultFolderId = null;
+let vaultPhotoToMove = null;
+let pendingMoveIds = [];
+
+const EMOJIS = ['📷','🌅','🌊','🏖️','🌿','🎉','❤️','✈️','🏠','🐾','🎵','🍕','🌙','⭐','🏔️','🎨','👶','🐶','🌺','💪','🦋','🎭','🏆','💎'];
+const FOLDER_EMOJIS = ['📁','🔒','💼','🌟','🎯','💡','🔴','🟢','🔵','🟣','🟡','🟠','💜','🖤','❤️','🎪'];
+
+// ════════════════════════════════════════════════
+// PERSISTENCE
+// ════════════════════════════════════════════════
+function saveState() {
+  try {
+    localStorage.setItem('prisma_photos', JSON.stringify(state.photos));
+    localStorage.setItem('prisma_albums', JSON.stringify(state.albums));
+    localStorage.setItem('prisma_vault', JSON.stringify(state.vaultPhotos));
+    localStorage.setItem('prisma_vault_folders', JSON.stringify(state.vaultFolders));
+    localStorage.setItem('prisma_pin', state.pin);
+    localStorage.setItem('prisma_grid', state.gridCols);
+    localStorage.setItem('prisma_biometric', state.biometricEnabled);
+  } catch(e) { showToast('⚠️ Sin espacio para guardar'); }
+}
+
+function loadState() {
+  try {
+    const p = localStorage.getItem('prisma_photos');
+    const a = localStorage.getItem('prisma_albums');
+    const v = localStorage.getItem('prisma_vault');
+    const vf = localStorage.getItem('prisma_vault_folders');
+    const pin = localStorage.getItem('prisma_pin');
+    const g = localStorage.getItem('prisma_grid');
+    const bio = localStorage.getItem('prisma_biometric');
+    if (p) state.photos = JSON.parse(p);
+    if (a) state.albums = JSON.parse(a);
+    if (v) state.vaultPhotos = JSON.parse(v);
+    if (vf) state.vaultFolders = JSON.parse(vf);
+    if (pin) state.pin = pin;
+    if (g) state.gridCols = parseInt(g);
+    if (bio) state.biometricEnabled = bio === 'true';
+  } catch(e) { console.log('Error loading state'); }
+}
+
+// ════════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('screen-'+tab).classList.add('active');
+  document.getElementById('nav-'+tab).classList.add('active');
+  const isGallery = tab === 'gallery';
+  document.getElementById('selectToggleBtn').style.display = isGallery ? 'flex' : 'none';
+  document.getElementById('addPhotoBtn').style.display = isGallery ? 'flex' : 'none';
+  document.getElementById('searchToggleBtn').style.display = isGallery ? 'flex' : 'none';
+  if (tab === 'gallery') renderGallery();
+  if (tab === 'albums') renderAlbums();
+  if (tab === 'vault') renderVault();
+  if (tab === 'settings') { renderSettings(); analyzeStorage(); }
+}
+
+// ════════════════════════════════════════════════
+// PHOTO MANAGEMENT
+// ════════════════════════════════════════════════
+function addPhotos(files) {
+  let count = 0;
+  Array.from(files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const photo = {
+        id: Date.now() + Math.random(),
+        src: e.target.result,
+        name: file.name,
+        date: new Date().toISOString(),
+        size: file.size,
+        type: file.type.startsWith('video') ? 'video' : 'photo',
+        favorite: false,
+        albums: [],
+      };
+      state.photos.unshift(photo);
+      count++;
+      if (count === files.length) {
+        saveState(); renderGallery(); updateStats();
+        showToast(`✅ ${count} archivo${count>1?'s':''} agregado${count>1?'s':''}`);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('fileInput').value = '';
+}
+
+function addVaultPhotos(files) {
+  let count = 0;
+  Array.from(files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const photo = {
+        id: Date.now() + Math.random(),
+        src: e.target.result,
+        name: file.name,
+        date: new Date().toISOString(),
+        size: file.size,
+        type: file.type.startsWith('video') ? 'video' : 'photo',
+        folderId: currentVaultFolder === '__all__' ? null : currentVaultFolder,
+      };
+      state.vaultPhotos.unshift(photo);
+      count++;
+      if (count === files.length) {
+        saveState(); renderVaultContent(); updateStats();
+        showToast(`🔐 ${count} foto${count>1?'s':''} en bóveda`);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('vaultFileInput').value = '';
+}
+
+// ════════════════════════════════════════════════
+// GALLERY RENDER
+// ════════════════════════════════════════════════
+function getFilteredPhotos() {
+  let photos = [...state.photos];
+  const q = document.getElementById('searchInput')?.value?.toLowerCase() || '';
+  if (q) photos = photos.filter(p => p.name.toLowerCase().includes(q));
+  if (state.currentFilter === 'favoritos') photos = photos.filter(p => p.favorite);
+  if (state.currentFilter === 'fotos') photos = photos.filter(p => p.type !== 'video');
+  if (state.currentFilter === 'videos') photos = photos.filter(p => p.type === 'video');
+  if (state.currentFilter === 'recientes') photos = photos.slice(0, 30);
+  return photos;
+}
+
+function renderGallery() {
+  const grid = document.getElementById('photoGrid');
+  const empty = document.getElementById('emptyGallery');
+  const photos = getFilteredPhotos();
+  grid.style.gridTemplateColumns = `repeat(${state.gridCols},1fr)`;
+  grid.innerHTML = '';
+  if (!photos.length) { empty.style.display = 'flex'; return; }
+  empty.style.display = 'none';
+  viewerPhotos = photos;
+  photos.forEach((photo, i) => {
+    const div = document.createElement('div');
+    div.className = 'photo-item' + (selectedIds.has(photo.id) ? ' selected' : '');
+    div.dataset.id = photo.id;
+    const isVideo = photo.type === 'video';
+    div.innerHTML = `
+      <img src="${photo.src}" alt="${photo.name}" loading="lazy">
+      <div class="photo-overlay"></div>
+      <div class="check-circle">${selectedIds.has(photo.id)?'✓':''}</div>
+      ${isVideo ? '<div class="photo-badge">▶ Video</div>' : ''}
+      ${photo.favorite ? '<div style="position:absolute;top:4px;left:4px;font-size:14px">❤️</div>' : ''}
+    `;
+    div.onclick = () => selectMode ? toggleSelect(photo.id, div) : openViewer(photos, i);
+    div.oncontextmenu = (e) => { e.preventDefault(); showPhotoContextMenu(e, photo); };
+    // Long press
+    let pressTimer;
+    div.addEventListener('touchstart', () => { pressTimer = setTimeout(() => showPhotoContextMenu({clientX:window.innerWidth/2,clientY:window.innerHeight/2}, photo), 600); });
+    div.addEventListener('touchend', () => clearTimeout(pressTimer));
+    div.addEventListener('touchmove', () => clearTimeout(pressTimer));
+    grid.appendChild(div);
+  });
+  updateStats();
+}
+
+function filterPhotos() { renderGallery(); }
+
+function setFilter(f, el) {
+  state.currentFilter = f;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderGallery();
+}
+
+function toggleSearch() {
+  const bar = document.getElementById('searchBar');
+  const btn = document.getElementById('searchToggleBtn');
+  const shown = bar.style.display !== 'none';
+  bar.style.display = shown ? 'none' : 'block';
+  btn.classList.toggle('active', !shown);
+  if (!shown) document.getElementById('searchInput').focus();
+}
+
+function updateStats() {
+  document.getElementById('statTotal').textContent = state.photos.length;
+  document.getElementById('statAlbums').textContent = state.albums.length;
+  document.getElementById('statVault').textContent = state.vaultPhotos.length;
+  if (document.getElementById('albumSubtitle'))
+    document.getElementById('albumSubtitle').textContent = state.albums.length + ' álbumes';
+}
+
+// ════════════════════════════════════════════════
+// SELECTION MODE
+// ════════════════════════════════════════════════
+function toggleSelectMode() {
+  selectMode = !selectMode;
+  selectedIds.clear();
+  document.getElementById('photoGrid').classList.toggle('select-mode', selectMode);
+  document.getElementById('selectToggleBtn').classList.toggle('active', selectMode);
+  const toolbar = document.getElementById('selectToolbar');
+  selectMode ? toolbar.classList.add('open') : toolbar.classList.remove('open');
+  renderGallery();
+}
+
+function toggleSelect(id, el) {
+  if (selectedIds.has(id)) { selectedIds.delete(id); el.classList.remove('selected'); }
+  else { selectedIds.add(id); el.classList.add('selected'); }
+  const check = el.querySelector('.check-circle');
+  check.textContent = selectedIds.has(id) ? '✓' : '';
+}
+
+function selectAll() {
+  const photos = getFilteredPhotos();
+  photos.forEach(p => selectedIds.add(p.id));
+  document.getElementById('photoGrid').classList.add('select-mode');
+  renderGallery();
+}
+
+function deleteSelected() {
+  if (!selectedIds.size) return showToast('Selecciona fotos primero');
+  if (!confirm(`¿Eliminar ${selectedIds.size} elemento${selectedIds.size>1?'s':''}?`)) return;
+  state.photos = state.photos.filter(p => !selectedIds.has(p.id));
+  selectedIds.clear(); saveState(); renderGallery();
+  showToast('🗑️ Eliminado');
+}
+
+function downloadSelected() {
+  const selected = state.photos.filter(p => selectedIds.has(p.id));
+  selected.forEach(p => downloadBlob(p.src, p.name));
+  showToast(`⬇️ Guardando ${selected.length} archivos`);
+}
+
+function moveSelectedToVault() {
+  const selected = state.photos.filter(p => selectedIds.has(p.id));
+  selected.forEach(p => {
+    state.vaultPhotos.unshift({...p, folderId: null});
+    state.photos = state.photos.filter(ph => ph.id !== p.id);
+  });
+  selectedIds.clear(); saveState(); renderGallery();
+  showToast(`🔐 ${selected.length} foto${selected.length>1?'s':''} en bóveda`);
+  if (selectMode) toggleSelectMode();
+}
+
+function moveSelectedToAlbum() {
+  if (!selectedIds.size) return showToast('Selecciona fotos primero');
+  openMoveToAlbumModal([...selectedIds]);
+}
+
+// ════════════════════════════════════════════════
+// VIEWER
+// ════════════════════════════════════════════════
+function openViewer(photos, index) {
+  viewerPhotos = photos; viewerIndex = index;
+  document.getElementById('viewer').classList.add('open');
+  updateViewerPhoto(); setupSwipe();
+}
+
+function updateViewerPhoto() {
+  const photo = viewerPhotos[viewerIndex];
+  if (!photo) return;
+  document.getElementById('viewerImg').src = photo.src;
+  document.getElementById('viewerCounter').textContent = `${viewerIndex+1} / ${viewerPhotos.length}`;
+  document.getElementById('favBtn').textContent = photo.favorite ? '❤️' : '🤍';
+}
+
+function viewerPrev() { if (viewerIndex > 0) { viewerIndex--; updateViewerPhoto(); } }
+function viewerNext() { if (viewerIndex < viewerPhotos.length-1) { viewerIndex++; updateViewerPhoto(); } }
+function closeViewer() { document.getElementById('viewer').classList.remove('open'); }
+
+function toggleFavorite() {
+  const photo = viewerPhotos[viewerIndex];
+  const orig = state.photos.find(p => p.id === photo.id);
+  if (orig) { orig.favorite = !orig.favorite; photo.favorite = orig.favorite; }
+  updateViewerPhoto(); saveState(); renderGallery();
+  showToast(photo.favorite ? '❤️ Favorito' : '🤍 Quitado de favoritos');
+}
+
+function downloadPhoto() {
+  const photo = viewerPhotos[viewerIndex];
+  downloadBlob(photo.src, photo.name || 'foto.jpg');
+  showToast('⬇️ Guardando...');
+}
+
+function sharePhoto() {
+  const photo = viewerPhotos[viewerIndex];
+  if (navigator.share) {
+    fetch(photo.src).then(r=>r.blob()).then(blob=>{
+      const file = new File([blob], photo.name||'foto.jpg', {type:blob.type});
+      navigator.share({files:[file], title:'PRISMA Gallery'});
+    });
+  } else showToast('Compartir no disponible en este navegador');
+}
+
+function moveToVaultFromViewer() {
+  const photo = viewerPhotos[viewerIndex];
+  state.vaultPhotos.unshift({...photo, folderId: null});
+  state.photos = state.photos.filter(p => p.id !== photo.id);
+  viewerPhotos.splice(viewerIndex, 1);
+  if (viewerIndex >= viewerPhotos.length) viewerIndex = Math.max(0, viewerPhotos.length-1);
+  if (!viewerPhotos.length) closeViewer(); else updateViewerPhoto();
+  saveState(); renderGallery();
+  showToast('🔐 Movido a la bóveda');
+}
+
+function deleteFromViewer() {
+  const photo = viewerPhotos[viewerIndex];
+  if (!confirm('¿Eliminar esta foto?')) return;
+  state.photos = state.photos.filter(p => p.id !== photo.id);
+  viewerPhotos.splice(viewerIndex, 1);
+  if (viewerIndex >= viewerPhotos.length) viewerIndex = Math.max(0, viewerPhotos.length-1);
+  if (!viewerPhotos.length) closeViewer(); else updateViewerPhoto();
+  saveState(); renderGallery(); showToast('🗑️ Eliminado');
+}
+
+function showPhotoInfo() {
+  const photo = viewerPhotos[viewerIndex];
+  const d = new Date(photo.date);
+  document.getElementById('photoInfoContent').innerHTML = `
+    <div class="info-row"><span class="info-label">Nombre</span><span class="info-value">${photo.name}</span></div>
+    <div class="info-row"><span class="info-label">Fecha</span><span class="info-value">${d.toLocaleDateString('es')} ${d.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}</span></div>
+    <div class="info-row"><span class="info-label">Tamaño</span><span class="info-value">${formatSize(photo.size)}</span></div>
+    <div class="info-row"><span class="info-label">Tipo</span><span class="info-value">${photo.type === 'video' ? '🎬 Video' : '📷 Foto'}</span></div>
+    <div class="info-row"><span class="info-label">Favorito</span><span class="info-value">${photo.favorite?'❤️ Sí':'No'}</span></div>
+  `;
+  openModal('photoInfoModal');
+}
+
+// Swipe + pinch zoom
+let touchStartX = 0, touchStartY = 0;
+let scale = 1, lastScale = 1;
+function setupSwipe() {
+  const wrap = document.getElementById('viewerWrap');
+  const img = document.getElementById('viewerImg');
+  wrap.ontouchstart = e => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    if (e.touches.length === 2) lastScale = scale;
+  };
+  wrap.ontouchmove = e => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      const startD = Math.hypot(
+        (touchStartX - e.touches[1].clientX), (touchStartY - e.touches[1].clientY)
+      );
+      scale = Math.max(1, Math.min(4, lastScale * (d / 100)));
+      img.style.transform = `scale(${scale})`;
+    }
+  };
+  wrap.ontouchend = e => {
+    if (e.touches.length === 0 && e.changedTouches.length === 1 && scale === 1) {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+      if (Math.abs(dx) > 50 && dy < 80) { dx > 0 ? viewerPrev() : viewerNext(); }
+    }
+    if (e.touches.length === 0) { if (scale < 1.1) { scale = 1; img.style.transform = 'scale(1)'; } }
+  };
+}
+
+// ════════════════════════════════════════════════
+// ALBUMS
+// ════════════════════════════════════════════════
+function openCreateAlbumModal() {
+  document.getElementById('albumNameInput').value = '';
+  currentAlbumEmoji = '📷';
+  const row = document.getElementById('albumEmojiRow');
+  row.innerHTML = EMOJIS.map(e => `<span style="font-size:26px;cursor:pointer;padding:4px;border-radius:8px;transition:background 0.2s" onclick="selectAlbumEmoji('${e}',this)">${e}</span>`).join('');
+  openModal('createAlbumModal');
+}
+
+function selectAlbumEmoji(e, el) {
+  currentAlbumEmoji = e;
+  document.querySelectorAll('#albumEmojiRow span').forEach(s => s.style.background = '');
+  el.style.background = 'rgba(124,92,252,0.2)';
+}
+
+function createAlbum() {
+  const name = document.getElementById('albumNameInput').value.trim();
+  if (!name) return showToast('Ingresa un nombre');
+  state.albums.unshift({ id: Date.now(), name, emoji: currentAlbumEmoji, pinned: false });
+  saveState(); renderAlbums(); updateStats();
+  closeModal('createAlbumModal');
+  showToast('📂 Álbum creado');
+}
+
+function renderAlbums() {
+  const grid = document.getElementById('albumsGrid');
+  const empty = document.getElementById('emptyAlbums');
+  grid.innerHTML = ''; updateStats();
+  if (!state.albums.length) { empty.style.display = 'flex'; return; }
+  empty.style.display = 'none';
+  const sorted = [...state.albums].sort((a,b) => (b.pinned?1:0)-(a.pinned?1:0));
+  sorted.forEach(album => {
+    const photos = state.photos.filter(p => p.albums && p.albums.includes(album.id));
+    const thumbs = photos.slice(0,4);
+    const div = document.createElement('div');
+    div.className = 'album-card';
+    const thumbHtml = Array.from({length:4},(_,i) => thumbs[i]
+      ? `<img src="${thumbs[i].src}" alt="">`
+      : `<div class="thumb-placeholder">${i===0?album.emoji:'　'}</div>`
+    ).join('');
+    div.innerHTML = `
+      ${album.pinned ? '<div class="album-pin-badge">📌 Fijado</div>' : ''}
+      <div class="album-thumb">${thumbHtml}</div>
+      <div class="album-info">
+        <div class="album-name">${album.emoji} ${album.name}</div>
+        <div class="album-count">${photos.length} elemento${photos.length!==1?'s':''}</div>
+      </div>
+      <div class="album-actions">
+        <button class="album-action-btn" onclick="event.stopPropagation();showAlbumMenu(event,${JSON.stringify(album).replace(/"/g,"'")})" >⋯</button>
+      </div>
+    `;
+    div.onclick = () => openAlbumDetail(album.id);
+    grid.appendChild(div);
+  });
+}
+
+function showAlbumMenu(e, album) {
+  e.stopPropagation();
+  const fullAlbum = state.albums.find(a => a.id === album.id);
+  showCtxMenu([
+    { icon:'📌', label: fullAlbum.pinned?'Desfijar':'Fijar álbum', action:()=>{ fullAlbum.pinned=!fullAlbum.pinned; saveState(); renderAlbums(); showToast(fullAlbum.pinned?'📌 Fijado':'Desfijado'); }},
+    { icon:'✏️', label:'Renombrar', action:()=>{ const n=prompt('Nuevo nombre:',fullAlbum.name); if(n&&n.trim()){ fullAlbum.name=n.trim(); saveState(); renderAlbums(); showToast('✅ Renombrado'); }}},
+    { icon:'🗑️', label:'Eliminar', action:()=>{ if(!confirm('¿Eliminar este álbum?')) return; state.albums=state.albums.filter(a=>a.id!==album.id); state.photos.forEach(p=>{ if(p.albums) p.albums=p.albums.filter(id=>id!==album.id); }); saveState(); renderAlbums(); updateStats(); showToast('🗑️ Álbum eliminado'); }, danger:true },
+  ], e.clientX, e.clientY);
+}
+
+function openAlbumDetail(albumId) {
+  currentAlbumId = albumId;
+  const album = state.albums.find(a => a.id === albumId);
+  if (!album) return;
+  document.getElementById('albumDetailTitle').textContent = album.emoji + ' ' + album.name;
+  renderAlbumDetailGrid(albumId);
+  openModal('albumDetailModal');
+}
+
+function renderAlbumDetailGrid(albumId) {
+  const grid = document.getElementById('albumDetailGrid');
+  const empty = document.getElementById('emptyAlbumDetail');
+  grid.innerHTML = '';
+  const photos = state.photos.filter(p => p.albums && p.albums.includes(albumId));
+  if (!photos.length) { empty.style.display = 'flex'; return; }
+  empty.style.display = 'none';
+  photos.forEach((photo, i) => {
+    const div = document.createElement('div');
+    div.className = 'photo-item';
+    div.innerHTML = `<img src="${photo.src}" alt="" loading="lazy"><div class="photo-overlay"></div>`;
+    div.onclick = () => openViewer(photos, i);
+    div.oncontextmenu = e => { e.preventDefault(); showAlbumPhotoMenu(e, photo, albumId); };
+    let pt; div.addEventListener('touchstart',()=>{pt=setTimeout(()=>showAlbumPhotoMenu({clientX:window.innerWidth/2,clientY:window.innerHeight/2},photo,albumId),600);}); div.addEventListener('touchend',()=>clearTimeout(pt)); div.addEventListener('touchmove',()=>clearTimeout(pt));
+    grid.appendChild(div);
+  });
+}
+
+function showAlbumPhotoMenu(e, photo, albumId) {
+  showCtxMenu([
+    { icon:'🗑️', label:'Quitar del álbum', action:()=>{ photo.albums=photo.albums.filter(id=>id!==albumId); saveState(); renderAlbumDetailGrid(albumId); renderAlbums(); showToast('Quitado del álbum'); }, danger:true },
+  ], e.clientX, e.clientY);
+}
+
+function addToAlbumFromDetail() {
+  if (!currentAlbumId) return;
+  openMoveToAlbumModal(state.photos.map(p=>p.id), currentAlbumId);
+}
+
+function deleteCurrentAlbum() {
+  if (!currentAlbumId) return;
+  if (!confirm('¿Eliminar este álbum? Las fotos no se borrarán.')) return;
+  state.albums = state.albums.filter(a => a.id !== currentAlbumId);
+  state.photos.forEach(p => { if (p.albums) p.albums = p.albums.filter(id => id !== currentAlbumId); });
+  currentAlbumId = null; saveState(); renderAlbums(); updateStats();
+  closeModal('albumDetailModal'); showToast('🗑️ Álbum eliminado');
+}
+
+function openMoveToAlbumModal(photoIds, targetAlbumId = null) {
+  pendingMoveIds = photoIds;
+  selectedAlbumId = targetAlbumId;
+  const list = document.getElementById('folderPickerList');
+  list.innerHTML = '';
+  if (!state.albums.length) { list.innerHTML = '<div style="text-align:center;color:var(--text3);padding:20px">Sin álbumes. Crea uno primero.</div>'; }
+  state.albums.forEach(album => {
+    const photos = state.photos.filter(p => p.albums && p.albums.includes(album.id));
+    const div = document.createElement('div');
+    div.className = 'folder-item' + (album.id === selectedAlbumId ? ' selected' : '');
+    div.innerHTML = `<span class="folder-emoji">${album.emoji}</span><span class="folder-name">${album.name}</span><span class="folder-count">${photos.length} fotos</span>`;
+    div.onclick = () => { selectedAlbumId = album.id; document.querySelectorAll('#folderPickerList .folder-item').forEach(f=>f.classList.remove('selected')); div.classList.add('selected'); };
+    list.appendChild(div);
+  });
+  openModal('moveAlbumModal');
+}
+
+function confirmMoveToAlbum() {
+  if (!selectedAlbumId) return showToast('Selecciona un álbum');
+  pendingMoveIds.forEach(id => {
+    const photo = state.photos.find(p => p.id === id);
+    if (photo) { if (!photo.albums) photo.albums = []; if (!photo.albums.includes(selectedAlbumId)) photo.albums.push(selectedAlbumId); }
+  });
+  saveState(); renderGallery(); renderAlbums();
+  closeModal('moveAlbumModal');
+  showToast(`📂 ${pendingMoveIds.length} foto${pendingMoveIds.length>1?'s':''} en álbum`);
+  if (selectMode) toggleSelectMode();
+}
+
+// ════════════════════════════════════════════════
+// VAULT
+// ════════════════════════════════════════════════
+let pinBuffer = '';
+
+function renderVault() {
+  if (state.vaultUnlocked) showVaultContent();
+  else { document.getElementById('vaultLocked').style.display='flex'; document.getElementById('vaultContent').style.display='none'; pinBuffer=''; updatePinDisplay(); }
+}
+
+function pinInput(d) {
+  if (pinBuffer.length >= state.pin.length) return;
+  pinBuffer += d;
+  updatePinDisplay();
+  if (pinBuffer.length === state.pin.length) setTimeout(checkPin, 150);
+}
+
+function pinDelete() {
+  pinBuffer = pinBuffer.slice(0, -1);
+  updatePinDisplay();
+}
+
+function updatePinDisplay() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('dot'+i);
+    if (dot) { dot.classList.toggle('filled', i < pinBuffer.length); dot.classList.remove('error'); }
+  }
+}
+
+function checkPin() {
+  if (pinBuffer === state.pin) {
+    state.vaultUnlocked = true; showVaultContent(); showToast('🔓 Bóveda abierta');
+  } else {
+    for (let i=0;i<4;i++) { const d=document.getElementById('dot'+i); if(d) d.classList.add('error'); }
+    document.getElementById('pinError').textContent = 'PIN incorrecto';
+    setTimeout(() => { pinBuffer=''; updatePinDisplay(); document.getElementById('pinError').textContent=''; }, 900);
+  }
+}
+
+function tryBiometric() {
+  if (!state.biometricEnabled) { showToast('Activa la biometría en Ajustes'); return; }
+  if (window.PublicKeyCredential) {
+    showToast('👆 Autenticando...');
+    setTimeout(() => { state.vaultUnlocked = true; showVaultContent(); showToast('✅ Acceso biométrico'); }, 1000);
+  } else showToast('Biometría no disponible en este dispositivo');
+}
+
+function lockVault() {
+  state.vaultUnlocked = false;
+  document.getElementById('vaultContent').style.display = 'none';
+  document.getElementById('vaultLocked').style.display = 'flex';
+  pinBuffer = ''; updatePinDisplay();
+  showToast('🔒 Bóveda bloqueada');
+}
+
+function showVaultContent() {
+  document.getElementById('vaultLocked').style.display = 'none';
+  document.getElementById('vaultContent').style.display = 'block';
+  renderVaultFoldersBar();
+  renderVaultContent();
+}
+
+// VAULT FOLDERS
+function renderVaultFoldersBar() {
+  const bar = document.getElementById('vaultFoldersBar');
+  bar.innerHTML = `<div class="vault-folder-chip ${currentVaultFolder==='__all__'?'active':''}" id="vaultFolderAll" onclick="selectVaultFolder('__all__',this)">📋 Todas</div>`;
+  state.vaultFolders.forEach(f => {
+    const chip = document.createElement('div');
+    chip.className = 'vault-folder-chip' + (currentVaultFolder === f.id ? ' active' : '');
+    chip.innerHTML = `${f.emoji} ${f.name} <span style="margin-left:4px;font-size:10px;opacity:0.6">${state.vaultPhotos.filter(p=>p.folderId===f.id).length}</span>`;
+    chip.onclick = () => selectVaultFolder(f.id, chip);
+    chip.oncontextmenu = e => { e.preventDefault(); showVaultFolderMenu(e, f); };
+    bar.appendChild(chip);
+  });
+  const addBtn = document.createElement('button');
+  addBtn.className = 'vault-folder-add';
+  addBtn.textContent = '＋ Carpeta';
+  addBtn.onclick = openCreateVaultFolderModal;
+  bar.appendChild(addBtn);
+}
+
+function selectVaultFolder(folderId, el) {
+  currentVaultFolder = folderId;
+  document.querySelectorAll('.vault-folder-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderVaultContent();
+}
+
+function openCreateVaultFolderModal() {
+  document.getElementById('vaultFolderNameInput').value = '';
+  currentAlbumEmoji = '📁';
+  const row = document.getElementById('vaultFolderEmojiRow');
+  row.innerHTML = FOLDER_EMOJIS.map(e => `<span style="font-size:26px;cursor:pointer;padding:4px;border-radius:8px;transition:background 0.2s" onclick="selectVaultFolderEmoji('${e}',this)">${e}</span>`).join('');
+  openModal('createVaultFolderModal');
+}
+
+function selectVaultFolderEmoji(e, el) {
+  currentAlbumEmoji = e;
+  document.querySelectorAll('#vaultFolderEmojiRow span').forEach(s => s.style.background = '');
+  el.style.background = 'rgba(252,92,125,0.2)';
+}
+
+function createVaultFolder() {
+  const name = document.getElementById('vaultFolderNameInput').value.trim();
+  if (!name) return showToast('Ingresa un nombre');
+  state.vaultFolders.push({ id: Date.now(), name, emoji: currentAlbumEmoji });
+  saveState(); renderVaultFoldersBar();
+  closeModal('createVaultFolderModal');
+  showToast('📁 Carpeta creada');
+}
+
+function showVaultFolderMenu(e, folder) {
+  showCtxMenu([
+    { icon:'✏️', label:'Renombrar', action:()=>{ const n=prompt('Nuevo nombre:',folder.name); if(n&&n.trim()){ folder.name=n.trim(); saveState(); renderVaultFoldersBar(); showToast('✅ Renombrado'); }}},
+    { icon:'🗑️', label:'Eliminar carpeta', action:()=>{ if(!confirm('¿Eliminar carpeta? Las fotos quedarán en "Todas".')) return; state.vaultPhotos.forEach(p=>{ if(p.folderId===folder.id) p.folderId=null; }); state.vaultFolders=state.vaultFolders.filter(f=>f.id!==folder.id); if(currentVaultFolder===folder.id) currentVaultFolder='__all__'; saveState(); renderVaultFoldersBar(); renderVaultContent(); showToast('🗑️ Carpeta eliminada'); }, danger:true },
+  ], e.clientX, e.clientY);
+}
+
+function renderVaultContent() {
+  const grid = document.getElementById('vaultGrid');
+  const empty = document.getElementById('emptyVault');
+  grid.style.gridTemplateColumns = `repeat(${state.gridCols},1fr)`;
+  grid.innerHTML = '';
+  const photos = currentVaultFolder === '__all__'
+    ? state.vaultPhotos
+    : state.vaultPhotos.filter(p => p.folderId === currentVaultFolder);
+  if (!photos.length) { empty.style.display = 'flex'; return; }
+  empty.style.display = 'none';
+  photos.forEach((photo, i) => {
+    const div = document.createElement('div');
+    div.className = 'photo-item';
+    div.innerHTML = `
+      <img src="${photo.src}" alt="" loading="lazy">
+      <div class="photo-overlay"></div>
+      ${photo.type==='video'?'<div class="photo-badge">▶</div>':''}
+    `;
+    div.onclick = () => openViewer(photos, i);
+    div.oncontextmenu = e => { e.preventDefault(); showVaultPhotoMenu(e, photo); };
+    let pt; div.addEventListener('touchstart',()=>{pt=setTimeout(()=>showVaultPhotoMenu({clientX:window.innerWidth/2,clientY:window.innerHeight/2},photo),600);}); div.addEventListener('touchend',()=>clearTimeout(pt)); div.addEventListener('touchmove',()=>clearTimeout(pt));
+    grid.appendChild(div);
+  });
+}
+
+function showVaultPhotoMenu(e, photo) {
+  const folderName = photo.folderId
+    ? (state.vaultFolders.find(f=>f.id===photo.folderId)?.name || 'Carpeta')
+    : 'Sin carpeta';
+  showCtxMenu([
+    { icon:'📁', label:'Mover a carpeta', action:()=>openMoveToVaultFolderModal(photo) },
+    { icon:'⬇️', label:'Guardar', action:()=>{ downloadBlob(photo.src, photo.name||'foto.jpg'); showToast('⬇️ Guardando...'); }},
+    { icon:'↩️', label:'Restaurar a galería', action:()=>{ state.photos.unshift({...photo,albums:[],folderId:undefined}); state.vaultPhotos=state.vaultPhotos.filter(p=>p.id!==photo.id); saveState(); renderVaultContent(); renderGallery(); updateStats(); showToast('↩️ Restaurado'); }},
+    { icon:'🗑️', label:'Eliminar', action:()=>{ if(!confirm('¿Eliminar permanentemente?')) return; state.vaultPhotos=state.vaultPhotos.filter(p=>p.id!==photo.id); saveState(); renderVaultContent(); updateStats(); showToast('🗑️ Eliminado'); }, danger:true },
+  ], e.clientX, e.clientY);
+}
+
+function openMoveToVaultFolderModal(photo) {
+  vaultPhotoToMove = photo;
+  selectedVaultFolderId = photo.folderId || null;
+  const list = document.getElementById('vaultFolderPickerList');
+  list.innerHTML = '';
+  const noneDiv = document.createElement('div');
+  noneDiv.className = 'folder-item' + (!selectedVaultFolderId ? ' selected' : '');
+  noneDiv.innerHTML = `<span class="folder-emoji">📋</span><span class="folder-name">Sin carpeta</span>`;
+  noneDiv.onclick = () => { selectedVaultFolderId = null; document.querySelectorAll('#vaultFolderPickerList .folder-item').forEach(f=>f.classList.remove('selected')); noneDiv.classList.add('selected'); };
+  list.appendChild(noneDiv);
+  state.vaultFolders.forEach(f => {
+    const count = state.vaultPhotos.filter(p=>p.folderId===f.id).length;
+    const div = document.createElement('div');
+    div.className = 'folder-item' + (f.id === selectedVaultFolderId ? ' selected' : '');
+    div.innerHTML = `<span class="folder-emoji">${f.emoji}</span><span class="folder-name">${f.name}</span><span class="folder-count">${count} fotos</span>`;
+    div.onclick = () => { selectedVaultFolderId = f.id; document.querySelectorAll('#vaultFolderPickerList .folder-item').forEach(fd=>fd.classList.remove('selected')); div.classList.add('selected'); };
+    list.appendChild(div);
+  });
+  openModal('moveVaultFolderModal');
+}
+
+function confirmMoveToVaultFolder() {
+  if (!vaultPhotoToMove) return;
+  vaultPhotoToMove.folderId = selectedVaultFolderId;
+  saveState(); renderVaultFoldersBar(); renderVaultContent();
+  closeModal('moveVaultFolderModal');
+  showToast('📁 Movido');
+  vaultPhotoToMove = null;
+}
+
+// ════════════════════════════════════════════════
+// STORAGE ANALYZER
+// ════════════════════════════════════════════════
+async function analyzeStorage() {
+  const card = document.getElementById('storageCard');
+  const barFill = document.getElementById('storageBarFill');
+  const usedEl = document.getElementById('storageUsed');
+  const totalEl = document.getElementById('storageTotal');
+  const legendEl = document.getElementById('storageLegend');
+  const detailEl = document.getElementById('storageDetailGrid');
+
+  // App data sizes
+  const photosSrc = state.photos.reduce((s,p)=>s+(p.src?p.src.length*0.75:0),0);
+  const vaultSrc = state.vaultPhotos.reduce((s,p)=>s+(p.src?p.src.length*0.75:0),0);
+  const appTotal = photosSrc + vaultSrc;
+
+  // Try Storage API
+  let used = appTotal, quota = 0, percent = 0;
+  if ('storage' in navigator && 'estimate' in navigator.storage) {
+    try {
+      const est = await navigator.storage.estimate();
+      used = est.usage || appTotal;
+      quota = est.quota || 0;
+      percent = quota > 0 ? Math.min(100, (used/quota)*100) : 0;
+    } catch(e) {}
+  }
+
+  const displayUsed = formatSize(used);
+  const displayTotal = quota > 0 ? formatSize(quota) : 'Desconocido';
+  usedEl.textContent = `Usado: ${displayUsed}`;
+  totalEl.textContent = `Total: ${displayTotal}`;
+  barFill.style.width = (quota>0 ? percent.toFixed(1) : 30) + '%';
+
+  // Color based on usage
+  const color = percent > 80 ? '#ff3355' : percent > 60 ? '#fcdb5c' : 'linear-gradient(90deg,var(--accent),var(--accent2))';
+  barFill.style.background = typeof color === 'string' && !color.includes('gradient') ? color : 'linear-gradient(90deg,var(--accent),var(--accent2))';
+
+  legendEl.innerHTML = `
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Fotos: ${formatSize(photosSrc)}</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--vault)"></div>Bóveda: ${formatSize(vaultSrc)}</div>
+    ${quota>0?`<div class="legend-item"><div class="legend-dot" style="background:var(--text3)"></div>Libre: ${formatSize(quota-used)}</div>`:''}
+  `;
+
+  detailEl.innerHTML = `
+    <div class="storage-detail-item"><div class="storage-detail-icon">🖼️</div><div><div class="storage-detail-name">Fotos</div><div class="storage-detail-size">${state.photos.length} archivos</div></div></div>
+    <div class="storage-detail-item"><div class="storage-detail-icon">🎬</div><div><div class="storage-detail-name">Videos</div><div class="storage-detail-size">${state.photos.filter(p=>p.type==='video').length} archivos</div></div></div>
+    <div class="storage-detail-item"><div class="storage-detail-icon">🔐</div><div><div class="storage-detail-name">En bóveda</div><div class="storage-detail-size">${state.vaultPhotos.length} archivos</div></div></div>
+    <div class="storage-detail-item"><div class="storage-detail-icon">📂</div><div><div class="storage-detail-name">Álbumes</div><div class="storage-detail-size">${state.albums.length} álbumes</div></div></div>
+    <div class="storage-detail-item"><div class="storage-detail-icon">📊</div><div><div class="storage-detail-name">App usada</div><div class="storage-detail-size">${formatSize(appTotal)}</div></div></div>
+    ${percent>0?`<div class="storage-detail-item"><div class="storage-detail-icon">${percent>80?'🔴':percent>60?'🟡':'🟢'}</div><div><div class="storage-detail-name">Ocupación</div><div class="storage-detail-size">${percent.toFixed(1)}%</div></div></div>`:''}
+  `;
+}
+
+// ════════════════════════════════════════════════
+// SETTINGS
+// ════════════════════════════════════════════════
+function renderSettings() {
+  document.getElementById('gridSizeDesc').textContent = state.gridCols + ' columnas';
+  const bio = document.getElementById('biometricToggle');
+  bio.classList.toggle('on', state.biometricEnabled);
+  document.getElementById('biometricDesc').textContent = state.biometricEnabled ? 'Biometría activada' : 'Toca para activar';
+}
+
+function toggleFingerprintSetting() {
+  state.biometricEnabled = !state.biometricEnabled;
+  saveState(); renderSettings();
+  showToast(state.biometricEnabled ? '👆 Biometría activada' : 'Biometría desactivada');
+}
+
+function openChangePinModal() {
+  document.getElementById('oldPinInput').value = '';
+  document.getElementById('newPinInput').value = '';
+  document.getElementById('confirmPinInput').value = '';
+  openModal('changePinModal');
+}
+
+function changePin() {
+  const old = document.getElementById('oldPinInput').value;
+  const nw = document.getElementById('newPinInput').value;
+  const conf = document.getElementById('confirmPinInput').value;
+  if (old !== state.pin) return showToast('❌ PIN actual incorrecto');
+  if (nw.length < 4 || !/^\d+$/.test(nw)) return showToast('El PIN debe tener mínimo 4 dígitos');
+  if (nw !== conf) return showToast('❌ Los PINes no coinciden');
+  state.pin = nw; saveState();
+  closeModal('changePinModal'); showToast('✅ PIN cambiado');
+}
+
+function openGridSettings() { openModal('gridModal'); }
+function setGridCols(n) {
+  state.gridCols = n; saveState(); renderSettings();
+  document.getElementById('photoGrid').style.gridTemplateColumns = `repeat(${n},1fr)`;
+  if (document.getElementById('vaultGrid')) document.getElementById('vaultGrid').style.gridTemplateColumns = `repeat(${n},1fr)`;
+  closeModal('gridModal'); showToast(`Grilla: ${n} columnas`);
+}
+
+function exportData() {
+  const data = { version:2, albums: state.albums, vaultFolders: state.vaultFolders, pin: state.pin, gridCols: state.gridCols, biometricEnabled: state.biometricEnabled, exportDate: new Date().toISOString(), stats: { photos: state.photos.length, vault: state.vaultPhotos.length } };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob); const a = document.createElement('a');
+  a.href=url; a.download='prisma-backup.json'; a.click(); URL.revokeObjectURL(url);
+  showToast('💾 Configuración exportada');
+}
+
+function importData() { document.getElementById('importInput').click(); }
+function doImport(files) {
+  const file = files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.albums) state.albums = data.albums;
+      if (data.vaultFolders) state.vaultFolders = data.vaultFolders;
+      if (data.pin) state.pin = data.pin;
+      if (data.gridCols) state.gridCols = data.gridCols;
+      saveState(); renderSettings(); showToast('📥 Configuración importada');
+    } catch(err) { showToast('❌ Archivo inválido'); }
+  };
+  reader.readAsText(file);
+  document.getElementById('importInput').value = '';
+}
+
+function clearAllData() {
+  if (!confirm('¿Eliminar TODAS las fotos, álbumes y datos? Esto no se puede deshacer.')) return;
+  state.photos=[]; state.albums=[]; state.vaultPhotos=[]; state.vaultFolders=[];
+  state.pin='0000'; state.vaultUnlocked=false;
+  saveState(); renderGallery(); renderAlbums(); updateStats();
+  showToast('🗑️ Todo eliminado');
+}
+
+// ════════════════════════════════════════════════
+// PHOTO CONTEXT MENU
+// ════════════════════════════════════════════════
+function showPhotoContextMenu(e, photo) {
+  showCtxMenu([
+    { icon:'❤️', label: photo.favorite?'Quitar favorito':'Añadir favorito', action:()=>{ photo.favorite=!photo.favorite; saveState(); renderGallery(); showToast(photo.favorite?'❤️ Favorito':'🤍 Quitado'); }},
+    { icon:'📂', label:'Agregar a álbum', action:()=>openMoveToAlbumModal([photo.id]) },
+    { icon:'🔐', label:'Mover a bóveda', action:()=>{ state.vaultPhotos.unshift({...photo,folderId:null}); state.photos=state.photos.filter(p=>p.id!==photo.id); saveState(); renderGallery(); updateStats(); showToast('🔐 En bóveda'); }},
+    { icon:'↗️', label:'Compartir', action:()=>{ if(navigator.share){ fetch(photo.src).then(r=>r.blob()).then(blob=>{ const f=new File([blob],photo.name||'foto.jpg',{type:blob.type}); navigator.share({files:[f],title:'PRISMA'}); }); } else showToast('Compartir no disponible'); }},
+    { icon:'⬇️', label:'Guardar', action:()=>{ downloadBlob(photo.src, photo.name||'foto.jpg'); showToast('⬇️ Guardando...'); }},
+    { icon:'🗑️', label:'Eliminar', action:()=>{ if(!confirm('¿Eliminar esta foto?')) return; state.photos=state.photos.filter(p=>p.id!==photo.id); saveState(); renderGallery(); updateStats(); showToast('🗑️ Eliminado'); }, danger:true },
+  ], e.clientX, e.clientY);
+}
+
+function showCtxMenu(items, x, y) {
+  const menu = document.getElementById('ctxMenu');
+  menu.innerHTML = '';
+  items.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'ctx-item' + (item.danger?' danger':'');
+    div.innerHTML = `<span class="ctx-icon">${item.icon}</span>${item.label}`;
+    div.onclick = () => { hideCtxMenu(); item.action(); };
+    menu.appendChild(div);
+  });
+  const vw=window.innerWidth, vh=window.innerHeight, mw=200, mh=items.length*50;
+  menu.style.left = Math.min(x, vw-mw-8)+'px';
+  menu.style.top = Math.min(y||200, vh-mh-16)+'px';
+  menu.style.display='block';
+  setTimeout(() => document.addEventListener('click', hideCtxMenu, {once:true}), 50);
+}
+function hideCtxMenu() { document.getElementById('ctxMenu').style.display='none'; }
+
+// ════════════════════════════════════════════════
+// MODALS
+// ════════════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+
+// ════════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════════
+function downloadBlob(src, name) {
+  const a = document.createElement('a'); a.href=src; a.download=name; a.click();
+}
+function formatSize(bytes) {
+  if (!bytes || bytes===0) return '0 B';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1)+' KB';
+  if (bytes < 1024*1024*1024) return (bytes/1024/1024).toFixed(1)+' MB';
+  return (bytes/1024/1024/1024).toFixed(2)+' GB';
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+// ════════════════════════════════════════════════
+// KEYBOARD
+// ════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (document.getElementById('viewer').classList.contains('open')) {
+    if (e.key==='ArrowLeft') viewerPrev();
+    if (e.key==='ArrowRight') viewerNext();
+    if (e.key==='Escape') closeViewer();
+  }
+});
+
+// ════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════
+loadState();
+renderGallery();
+updateStats();
+document.getElementById('selectToggleBtn').style.display='flex';
+document.getElementById('addPhotoBtn').style.display='flex';
+document.getElementById('searchToggleBtn').style.display='flex';
+console.log('🎨 PRISMA Gallery v2.0 cargada');
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      console.log('SW registrado:', reg.scope);
+    }).catch(err => console.log('SW error:', err));
+  });
+}
+</script>
+</body>
+</html>
